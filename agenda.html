@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Agenda</title>
+
+  <!-- 🔥 FullCalendar -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    #calendar {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    .fc {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .fc-toolbar-title {
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .fc-button {
+      background: #2c3e50 !important;
+      border: none !important;
+      border-radius: 6px !important;
+      padding: 6px 12px !important;
+    }
+
+    .fc-button:hover {
+      background: #34495e !important;
+    }
+
+    .fc-timegrid-slot {
+      height: 50px !important;
+    }
+
+    .fc-event {
+      border-radius: 8px !important;
+      border: none !important;
+      padding: 4px !important;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .fc-event-title {
+      font-weight: 600;
+    }
+
+    .fc-timegrid-now-indicator-line {
+      border-color: red !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>📅 Agenda</h1>
+  <div id="calendar"></div>
+
+  <script type="module">
+
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    const supabase = createClient(
+      "https://lgpydcsolgbqiuplvjsc.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxncHlkY3NvbGdicWl1cGx2anNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NDE0ODgsImV4cCI6MjA4OTUxNzQ4OH0.bmCbu6fjAixqCMwBbms2tAXHpzJOccz57_RrAKjovTQ"
+    );
+
+    // 🔥 KLEUREN LOGICA
+    function getKleur(status, interesse, elektrisch) {
+      if (status === "bevestigd") return "#2ecc71"; // groen
+      if (status === "voicemail") return "#f1c40f"; // geel
+      if (status === "nieuw" || !status) return "#bdc3c7"; // grijs
+
+      return elektrisch.includes(interesse)
+        ? "#ff7675"
+        : "#74b9ff";
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+
+      const { data, error } = await supabase
+        .from("afspraken")
+        .select("*");
+
+      if (error) {
+        console.error(error);
+        alert("Supabase error (check je key of RLS)");
+        return;
+      }
+
+      const elektrisch = ["Zonnepanelen","Batterij","Warmtepomp","Airco","Laadpaal"];
+
+      // ❌ geannuleerd eruit
+      const filtered = (data || []).filter(a => a.status !== "geannuleerd");
+
+      const events = filtered.map(a => {
+
+        const start = a.datum + "T" + a.tijdslot;
+
+        const duur = elektrisch.includes(a.interesse) ? 120 : 60;
+
+        const end = new Date(start);
+        end.setMinutes(end.getMinutes() + duur);
+
+        return {
+          title: 
+            (a.status === "bevestigd" ? "✅ " : 
+             a.status === "voicemail" ? "📞 " : 
+             a.status === "nieuw" ? "🕒 " : "") +
+            a.voornaam + " " + a.achternaam,
+
+          start: start,
+          end: end.toISOString(),
+
+          backgroundColor: getKleur(a.status, a.interesse, elektrisch),
+          borderColor: getKleur(a.status, a.interesse, elektrisch),
+          textColor: "#fff"
+        };
+      });
+
+      const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+
+        initialView: 'timeGridWeek',
+
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'timeGridWeek,timeGridDay'
+        },
+
+        locale: 'nl',
+        height: 650,
+        allDaySlot: false,
+        nowIndicator: true,
+
+        slotMinTime: "13:00:00",
+        slotMaxTime: "20:00:00",
+
+        events: events
+      });
+
+      calendar.render();
+    });
+
+  </script>
+
+</body>
+</html>

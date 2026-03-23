@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Afspraak formulier</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<h1>Afspraak formulier</h1>
+
+<form id="afspraakForm">
+
+<h3>Werver</h3>
+
+<label>Naam werver</label>
+<input type="text" id="werver" required>   
+
+<h3>Adres</h3>
+
+<label>Postcode</label>
+<input type="text" id="postcode" required>
+
+<label>Huisnummer</label>
+<input type="text" id="huisnummer" required>
+
+<label>Straatnaam</label>
+<input type="text" id="straatnaam" readonly>
+
+<h3>Afspraak</h3>
+
+<label>Datum afspraak</label>
+<input type="date" id="datum" required>
+
+<label>Tijdslot</label>
+<select id="tijdslot" required></select>
+
+<h3>Klant</h3>
+
+<label>Voornaam</label>
+<input type="text" id="voornaam" required>
+
+<label>Achternaam</label>
+<input type="text" id="achternaam" required>
+
+<label>Telefoonnummer</label>
+<input type="text" id="telefoon" required>
+
+<label>E-mail</label>
+<input type="email" id="email" required>
+
+<label>Zelf al gedaan</label>
+<textarea id="zelfgedaan" required></textarea>
+
+<h3>Wat is interessant?</h3>
+
+<label><input type="checkbox" name="interesse" value="Zonnepanelen"> Zonnepanelen</label>
+<label><input type="checkbox" name="interesse" value="Batterij"> Batterij</label>
+<label><input type="checkbox" name="interesse" value="Warmtepomp"> Warmtepomp</label>
+<label><input type="checkbox" name="interesse" value="Airco"> Airco</label>
+<label><input type="checkbox" name="interesse" value="Laadpaal"> Laadpaal</label>
+
+<label><input type="checkbox" name="interesse" value="Ramen"> Ramen</label>
+<label><input type="checkbox" name="interesse" value="Kozijnen"> Kozijnen</label>
+<label><input type="checkbox" name="interesse" value="Dak isolatie"> Dak isolatie</label>
+<label><input type="checkbox" name="interesse" value="Bodem isolatie"> Bodem isolatie</label>
+
+<h3>Wat wil de klant uit gesprek halen?</h3>
+
+<!-- 🔥 FIX -->
+<textarea id="doel" name="advies" required></textarea>
+
+<h3>Notities</h3>
+
+<!-- 🔥 NIEUW -->
+<textarea id="notities"></textarea>
+
+<h3>Partner aanwezig</h3>
+
+<!-- 🔥 FIX lowercase -->
+<label><input type="radio" name="partner" value="ja" required> Ja</label>
+<label><input type="radio" name="partner" value="nee"> Nee</label>
+<label><input type="radio" name="partner" value="nvt"> Niet van toepassing</label>
+
+<br><br>
+
+<button type="submit">Opslaan</button>
+
+</form>
+
+<script type="module" src="script.js"></script>
+
+</body>
+</html>

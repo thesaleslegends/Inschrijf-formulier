@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+</head>
+<body>
+
+<h2>Inloggen</h2>
+
+<input type="password" id="wachtwoord" placeholder="Wachtwoord">
+<button onclick="login()">Login</button>
+
+<script>
+function login() {
+  const pw = document.getElementById("wachtwoord").value;
+
+  if(pw === "alex123") {
+    localStorage.setItem("ingelogd", "true");
+    window.location.href = "leads.html";
+  } else {
+    alert("Verkeerd wachtwoord");
+  }
+}
+</script>
+
+</body>
+</html>
