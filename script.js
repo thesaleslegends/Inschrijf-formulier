@@ -1,5 +1,3 @@
-
-
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
 // 🔑 Supabase
@@ -9,7 +7,7 @@ const supabase = createClient(
 );
 
 // =========================
-// 🔥 DATUM BEPERKING (NIEUW)
+// 🔥 DATUM BEPERKING
 // =========================
 
 const datumInput = document.getElementById("datum");
@@ -71,7 +69,7 @@ function getEnd(start, duur){
 }
 
 // =========================
-// 🔥 STRAAT AUTO
+// 🔥 ADRES AUTO (FIXED)
 // =========================
 
 async function haalAdresOp(postcode, huisnummer) {
@@ -84,6 +82,15 @@ async function haalAdresOp(postcode, huisnummer) {
     const doc = data.response.docs[0];
 
     if (doc) {
+      // 👉 veld vullen (BELANGRIJK)
+      document.getElementById("straatnaam").value = doc.straatnaam || "";
+
+      // 👉 plaats opslaan in hidden veld (optioneel)
+      const plaatsInput = document.getElementById("plaats");
+      if (plaatsInput) {
+        plaatsInput.value = doc.woonplaatsnaam || "";
+      }
+
       return {
         straat: doc.straatnaam || "",
         plaats: doc.woonplaatsnaam || ""
@@ -95,8 +102,21 @@ async function haalAdresOp(postcode, huisnummer) {
 
   return null;
 }
-document.getElementById("postcode").addEventListener("blur", haalStraatOp);
-document.getElementById("huisnummer").addEventListener("blur", haalStraatOp);
+
+// ✅ FIX → juiste functie koppelen
+document.getElementById("postcode").addEventListener("blur", () => {
+  haalAdresOp(
+    document.getElementById("postcode").value,
+    document.getElementById("huisnummer").value
+  );
+});
+
+document.getElementById("huisnummer").addEventListener("blur", () => {
+  haalAdresOp(
+    document.getElementById("postcode").value,
+    document.getElementById("huisnummer").value
+  );
+});
 
 // =========================
 // 🔥 TIJDSLOTEN
@@ -107,12 +127,14 @@ async function genereerTijdsloten(){
   const select = document.getElementById("tijdslot");
   const datumRaw = document.getElementById("datum").value;
 
+  if (!select) return;
+
   select.innerHTML = '<option value="">Kies een tijd</option>';
 
   if(!datumRaw) return;
 
-  // 🔥 NIEUW → ZONDAG BLOKKEREN
   const gekozenDatumObj = new Date(datumRaw);
+
   if(gekozenDatumObj.getDay() === 0){
     select.innerHTML = '<option value="">Zondag gesloten</option>';
     return;
@@ -151,7 +173,6 @@ async function genereerTijdsloten(){
   const blocks = type === "elektrisch" ? elektrischBlokken : isolatieBlokken;
 
   blocks.forEach(block => {
-
     if(overlaps(block)) return;
 
     const option = document.createElement("option");
@@ -169,7 +190,7 @@ document.querySelectorAll('input[name="interesse"]').forEach(el=>{
 genereerTijdsloten();
 
 // =========================
-// 🔥 SUBMIT
+// 🔥 SUBMIT (FIXED)
 // =========================
 
 document.getElementById("afspraakForm").addEventListener("submit", async e => {
@@ -195,6 +216,8 @@ document.getElementById("afspraakForm").addEventListener("submit", async e => {
     huisnummer: document.getElementById("huisnummer").value.trim(),
     straatnaam: document.getElementById("straatnaam").value.trim(),
 
+    plaats: document.getElementById("plaats")?.value || "",
+
     zelfgedaan: document.getElementById("zelfgedaan").value.trim(),
 
     interesse: Array.from(interesses).map(i => i.value).join(","),
@@ -206,15 +229,13 @@ document.getElementById("afspraakForm").addEventListener("submit", async e => {
     status: "nieuw"
   };
 
-  console.log("DATA:", dataToInsert);
-
   const { error } = await supabase
     .from("afspraken")
     .insert([dataToInsert]);
 
   if(error){
-    alert("Fout bij opslaan");
     console.error(error);
+    alert("Fout bij opslaan");
   } else {
     alert("Afspraak opgeslagen ✅");
     document.getElementById("afspraakForm").reset();
