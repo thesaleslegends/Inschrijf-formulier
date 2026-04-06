@@ -72,11 +72,8 @@ function getEnd(start, duur){
 // 🔥 STRAAT AUTO
 // =========================
 
-async function haalAdresEnVulIn() {
-  const postcode = document.getElementById("postcode").value.replace(/\s/g, "").toUpperCase();
-  const huisnummer = document.getElementById("huisnummer").value;
-
-  if (!postcode || !huisnummer) return;
+async function haalAdresOp(postcode, huisnummer) {
+  if (!postcode || !huisnummer) return null;
 
   try {
     const res = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${postcode}+${huisnummer}`);
@@ -85,20 +82,19 @@ async function haalAdresEnVulIn() {
     const doc = data.response.docs[0];
 
     if (doc) {
-      // 🔥 straat zichtbaar invullen
-      document.getElementById("straatnaam").value = doc.straatnaam || "";
-
-      // 🔥 plaats opslaan (onzichtbaar)
-      document.getElementById("plaats").value = doc.woonplaatsnaam || "";
+      return {
+        straat: doc.straatnaam || "",
+        plaats: doc.woonplaatsnaam || ""
+      };
     }
   } catch (err) {
     console.error("Adres fout:", err);
   }
-}
 
-// events
-document.getElementById("postcode").addEventListener("blur", haalAdresEnVulIn);
-document.getElementById("huisnummer").addEventListener("blur", haalAdresEnVulIn);
+  return null;
+}
+document.getElementById("postcode").addEventListener("blur", haalStraatOp);
+document.getElementById("huisnummer").addEventListener("blur", haalStraatOp);
 
 // =========================
 // 🔥 TIJDSLOTEN
