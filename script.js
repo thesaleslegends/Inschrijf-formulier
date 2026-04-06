@@ -3,11 +3,11 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // 🔑 Supabase
 const supabase = createClient(
   "https://lgpydcsolgbqiuplvjsc.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxncHlkY3NvbGdicWl1cGx2anNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NDE0ODgsImV4cCI6MjA4OTUxNzQ4OH0.bmCbu6fjAixqCMwBbms2tAXHpzJOccz57_RrAKjovTQ"
+  "JOUW_KEY_HIER"
 );
 
 // =========================
-// 🔥 DATUM BEPERKING (NIEUW)
+// 🔥 DATUM BEPERKING
 // =========================
 
 const datumInput = document.getElementById("datum");
@@ -69,14 +69,11 @@ function getEnd(start, duur){
 }
 
 // =========================
-// 🔥 STRAAT AUTO
+// 🔥 ADRES AUTO (NIEUW)
 // =========================
 
-async function haalStraatOp() {
-  const postcode = document.getElementById("postcode").value.replace(/\s/g, "").toUpperCase();
-  const huisnummer = document.getElementById("huisnummer").value;
-
-  if(!postcode || !huisnummer) return;
+async function haalAdresOp(postcode, huisnummer) {
+  if (!postcode || !huisnummer) return null;
 
   try {
     const res = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${postcode}+${huisnummer}`);
@@ -84,16 +81,18 @@ async function haalStraatOp() {
 
     const doc = data.response.docs[0];
 
-    if(doc){
-      document.getElementById("straatnaam").value = doc.straatnaam || "";
+    if (doc) {
+      return {
+        straat: doc.straatnaam || "",
+        plaats: doc.woonplaatsnaam || ""
+      };
     }
   } catch (err) {
     console.error("Adres fout:", err);
   }
-}
 
-document.getElementById("postcode").addEventListener("blur", haalStraatOp);
-document.getElementById("huisnummer").addEventListener("blur", haalStraatOp);
+  return null;
+}
 
 // =========================
 // 🔥 TIJDSLOTEN
@@ -108,7 +107,6 @@ async function genereerTijdsloten(){
 
   if(!datumRaw) return;
 
-  // 🔥 NIEUW → ZONDAG BLOKKEREN
   const gekozenDatumObj = new Date(datumRaw);
   if(gekozenDatumObj.getDay() === 0){
     select.innerHTML = '<option value="">Zondag gesloten</option>';
@@ -166,7 +164,7 @@ document.querySelectorAll('input[name="interesse"]').forEach(el=>{
 genereerTijdsloten();
 
 // =========================
-// 🔥 SUBMIT
+// 🔥 SUBMIT (GEFIXT)
 // =========================
 
 document.getElementById("afspraakForm").addEventListener("submit", async e => {
@@ -174,6 +172,16 @@ document.getElementById("afspraakForm").addEventListener("submit", async e => {
 
   const interesses = document.querySelectorAll('input[name="interesse"]:checked');
   const partner = document.querySelector('input[name="partner"]:checked');
+
+  const postcode = document.getElementById("postcode").value.replace(/\s/g, "").toUpperCase();
+  const huisnummer = document.getElementById("huisnummer").value.trim();
+
+  const adres = await haalAdresOp(postcode, huisnummer);
+
+  if (!adres) {
+    alert("Adres niet gevonden, controleer postcode en huisnummer");
+    return;
+  }
 
   const dataToInsert = {
 
@@ -188,9 +196,10 @@ document.getElementById("afspraakForm").addEventListener("submit", async e => {
     telefoon: document.getElementById("telefoon").value.trim(),
     email: document.getElementById("email").value.trim(),
 
-    postcode: document.getElementById("postcode").value.trim(),
-    huisnummer: document.getElementById("huisnummer").value.trim(),
-    straatnaam: document.getElementById("straatnaam").value.trim(),
+    postcode: postcode,
+    huisnummer: huisnummer,
+    straatnaam: adres.straat,
+    plaats: adres.plaats,
 
     zelfgedaan: document.getElementById("zelfgedaan").value.trim(),
 
