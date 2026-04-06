@@ -12,12 +12,14 @@ const supabase = createClient(
 
 const datumInput = document.getElementById("datum");
 
-const today = new Date();
-const maxDate = new Date();
-maxDate.setMonth(maxDate.getMonth() + 1);
+if (datumInput) {
+  const today = new Date();
+  const maxDate = new Date();
+  maxDate.setMonth(maxDate.getMonth() + 1);
 
-datumInput.min = today.toISOString().split("T")[0];
-datumInput.max = maxDate.toISOString().split("T")[0];
+  datumInput.min = today.toISOString().split("T")[0];
+  datumInput.max = maxDate.toISOString().split("T")[0];
+}
 
 // =========================
 // BLOKKEN
@@ -69,54 +71,48 @@ function getEnd(start, duur){
 }
 
 // =========================
-// 🔥 ADRES AUTO (FIXED)
+// 🔥 ADRES AUTO (WERKT)
 // =========================
 
 async function haalAdresOp(postcode, huisnummer) {
-  if (!postcode || !huisnummer) return null;
+  if (!postcode || !huisnummer) return;
 
   try {
     const res = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${postcode}+${huisnummer}`);
     const data = await res.json();
 
-    const doc = data.response.docs[0];
+    const doc = data?.response?.docs?.[0];
 
     if (doc) {
-      // 👉 veld vullen (BELANGRIJK)
-      document.getElementById("straatnaam").value = doc.straatnaam || "";
+      const straatInput = document.getElementById("straatnaam");
+      if (straatInput) {
+        straatInput.value = doc.straatnaam || "";
+      }
 
-      // 👉 plaats opslaan in hidden veld (optioneel)
       const plaatsInput = document.getElementById("plaats");
       if (plaatsInput) {
         plaatsInput.value = doc.woonplaatsnaam || "";
       }
-
-      return {
-        straat: doc.straatnaam || "",
-        plaats: doc.woonplaatsnaam || ""
-      };
     }
+
   } catch (err) {
     console.error("Adres fout:", err);
   }
-
-  return null;
 }
 
-// ✅ FIX → juiste functie koppelen
-document.getElementById("postcode").addEventListener("blur", () => {
-  haalAdresOp(
-    document.getElementById("postcode").value,
-    document.getElementById("huisnummer").value
-  );
-});
+// 👉 events (GEEN haalStraatOp meer!)
+const postcodeInput = document.getElementById("postcode");
+const huisnummerInput = document.getElementById("huisnummer");
 
-document.getElementById("huisnummer").addEventListener("blur", () => {
-  haalAdresOp(
-    document.getElementById("postcode").value,
-    document.getElementById("huisnummer").value
-  );
-});
+if (postcodeInput && huisnummerInput) {
+  postcodeInput.addEventListener("blur", () => {
+    haalAdresOp(postcodeInput.value, huisnummerInput.value);
+  });
+
+  huisnummerInput.addEventListener("blur", () => {
+    haalAdresOp(postcodeInput.value, huisnummerInput.value);
+  });
+}
 
 // =========================
 // 🔥 TIJDSLOTEN
@@ -125,13 +121,11 @@ document.getElementById("huisnummer").addEventListener("blur", () => {
 async function genereerTijdsloten(){
 
   const select = document.getElementById("tijdslot");
-  const datumRaw = document.getElementById("datum").value;
+  const datumRaw = document.getElementById("datum")?.value;
 
-  if (!select) return;
+  if (!select || !datumRaw) return;
 
   select.innerHTML = '<option value="">Kies een tijd</option>';
-
-  if(!datumRaw) return;
 
   const gekozenDatumObj = new Date(datumRaw);
 
@@ -182,7 +176,7 @@ async function genereerTijdsloten(){
   });
 }
 
-document.getElementById("datum").addEventListener("change", genereerTijdsloten);
+document.getElementById("datum")?.addEventListener("change", genereerTijdsloten);
 document.querySelectorAll('input[name="interesse"]').forEach(el=>{
   el.addEventListener("change", genereerTijdsloten);
 });
@@ -190,10 +184,10 @@ document.querySelectorAll('input[name="interesse"]').forEach(el=>{
 genereerTijdsloten();
 
 // =========================
-// 🔥 SUBMIT (FIXED)
+// 🔥 SUBMIT
 // =========================
 
-document.getElementById("afspraakForm").addEventListener("submit", async e => {
+document.getElementById("afspraakForm")?.addEventListener("submit", async e => {
   e.preventDefault();
 
   const interesses = document.querySelectorAll('input[name="interesse"]:checked');
@@ -203,22 +197,22 @@ document.getElementById("afspraakForm").addEventListener("submit", async e => {
 
     werver: document.getElementById("werver")?.value.trim() || "",
 
-    datum: document.getElementById("datum").value,
-    tijdslot: document.getElementById("tijdslot").value,
+    datum: document.getElementById("datum")?.value,
+    tijdslot: document.getElementById("tijdslot")?.value,
 
-    voornaam: document.getElementById("voornaam").value.trim(),
-    achternaam: document.getElementById("achternaam").value.trim(),
+    voornaam: document.getElementById("voornaam")?.value.trim(),
+    achternaam: document.getElementById("achternaam")?.value.trim(),
 
-    telefoon: document.getElementById("telefoon").value.trim(),
-    email: document.getElementById("email").value.trim(),
+    telefoon: document.getElementById("telefoon")?.value.trim(),
+    email: document.getElementById("email")?.value.trim(),
 
-    postcode: document.getElementById("postcode").value.trim(),
-    huisnummer: document.getElementById("huisnummer").value.trim(),
-    straatnaam: document.getElementById("straatnaam").value.trim(),
+    postcode: document.getElementById("postcode")?.value.trim(),
+    huisnummer: document.getElementById("huisnummer")?.value.trim(),
+    straatnaam: document.getElementById("straatnaam")?.value.trim(),
 
     plaats: document.getElementById("plaats")?.value || "",
 
-    zelfgedaan: document.getElementById("zelfgedaan").value.trim(),
+    zelfgedaan: document.getElementById("zelfgedaan")?.value.trim(),
 
     interesse: Array.from(interesses).map(i => i.value).join(","),
 
