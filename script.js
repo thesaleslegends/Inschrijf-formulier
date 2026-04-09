@@ -3,7 +3,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // 🔑 Supabase
 const supabase = createClient(
   "https://lgpydcsolgbqiuplvjsc.supabase.co",
-  "YOUR_ANON_KEY"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxncHlkY3NvbGdicWl1cGx2anNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NDE0ODgsImV4cCI6MjA4OTUxNzQ4OH0.bmCbu6fjAixqCMwBbms2tAXHpzJOccz57_RrAKjovTQ"
 );
 
 // =========================
@@ -71,7 +71,7 @@ function getEnd(start, duur){
 }
 
 // =========================
-// 🔥 ADRES AUTO
+// 🔥 ADRES AUTO (WERKT)
 // =========================
 
 async function haalAdresOp(postcode, huisnummer) {
@@ -84,8 +84,15 @@ async function haalAdresOp(postcode, huisnummer) {
     const doc = data?.response?.docs?.[0];
 
     if (doc) {
-      document.getElementById("straatnaam").value = doc.straatnaam || "";
-      document.getElementById("plaats").value = doc.woonplaatsnaam || "";
+      const straatInput = document.getElementById("straatnaam");
+      if (straatInput) {
+        straatInput.value = doc.straatnaam || "";
+      }
+
+      const plaatsInput = document.getElementById("plaats");
+      if (plaatsInput) {
+        plaatsInput.value = doc.woonplaatsnaam || "";
+      }
     }
 
   } catch (err) {
@@ -93,19 +100,22 @@ async function haalAdresOp(postcode, huisnummer) {
   }
 }
 
+// 👉 events
 const postcodeInput = document.getElementById("postcode");
 const huisnummerInput = document.getElementById("huisnummer");
 
-postcodeInput?.addEventListener("blur", () => {
-  haalAdresOp(postcodeInput.value, huisnummerInput.value);
-});
+if (postcodeInput && huisnummerInput) {
+  postcodeInput.addEventListener("blur", () => {
+    haalAdresOp(postcodeInput.value, huisnummerInput.value);
+  });
 
-huisnummerInput?.addEventListener("blur", () => {
-  haalAdresOp(postcodeInput.value, huisnummerInput.value);
-});
+  huisnummerInput.addEventListener("blur", () => {
+    haalAdresOp(postcodeInput.value, huisnummerInput.value);
+  });
+}
 
 // =========================
-// 🔥 TIJDSLOTEN (FIXED)
+// 🔥 TIJDSLOTEN (ALLEEN DIT IS AANGEPAST)
 // =========================
 
 async function genereerTijdsloten(){
@@ -130,11 +140,10 @@ async function genereerTijdsloten(){
     .from("afspraken")
     .select("datum, tijdslot, interesse, status");
 
-  // 🔥 FIX: alleen blokkeren op gekwalificeerd + voicemail
   const bookedBlocks = (data || [])
-    .filter(a =>
+    .filter(a => 
       normalizeDate(a.datum) === gekozenDatum &&
-      ["gekwalificeerd", "voicemail"].includes(a.status?.toLowerCase())
+      ["gekwalificeerd", "voicemail"].includes((a.status || "").toLowerCase())
     )
     .map(a => {
       const start = a.tijdslot.slice(0,5);
@@ -181,4 +190,52 @@ genereerTijdsloten();
 // 🔥 SUBMIT
 // =========================
 
-document.getElementById("af
+document.getElementById("afspraakForm")?.addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const interesses = document.querySelectorAll('input[name="interesse"]:checked');
+  const partner = document.querySelector('input[name="partner"]:checked');
+
+  const dataToInsert = {
+
+    werver: document.getElementById("werver")?.value.trim() || "",
+
+    datum: document.getElementById("datum")?.value,
+    tijdslot: document.getElementById("tijdslot")?.value,
+
+    voornaam: document.getElementById("voornaam")?.value.trim(),
+    achternaam: document.getElementById("achternaam")?.value.trim(),
+
+    telefoon: document.getElementById("telefoon")?.value.trim(),
+    email: document.getElementById("email")?.value.trim(),
+
+    postcode: document.getElementById("postcode")?.value.trim(),
+    huisnummer: document.getElementById("huisnummer")?.value.trim(),
+    straatnaam: document.getElementById("straatnaam")?.value.trim(),
+
+    plaats: document.getElementById("plaats")?.value || "",
+
+    zelfgedaan: document.getElementById("zelfgedaan")?.value.trim(),
+
+    interesse: Array.from(interesses).map(i => i.value).join(","),
+
+    advies_gesprek: document.getElementById("doel")?.value || "",
+    notities: document.getElementById("notities")?.value || "",
+    partner_aanwezig: partner?.value || "",
+
+    status: "nieuw"
+  };
+
+  const { error } = await supabase
+    .from("afspraken")
+    .insert([dataToInsert]);
+
+  if(error){
+    console.error(error);
+    alert("Fout bij opslaan");
+  } else {
+    alert("Afspraak opgeslagen ✅");
+    document.getElementById("afspraakForm").reset();
+    genereerTijdsloten();
+  }
+});
